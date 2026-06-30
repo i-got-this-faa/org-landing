@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>3JS Ocean Night Background</title>
+
+		<style>
+			body {
+				margin: 0;
+				overflow: hidden;
+				background: #000;
+			}
+
+			canvas {
+				display: block;
+			}
+		</style>
+	</head>
+
+	<body>
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+					"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+				}
+			}
+		</script>
+
+		<script type="module">
+			import * as THREE from 'three';
+			import { Water } from 'three/addons/objects/Water.js';
+
+			let scene, camera, renderer, water, stars;
+			let clock = new THREE.Clock();
+
+			init();
+			animate();
+
+			function init() {
+				scene = new THREE.Scene();
+
+				camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 20000);
+
+				camera.position.set(0, 80, 220);
+				camera.lookAt(0, 0, 0);
+
+				renderer = new THREE.WebGLRenderer({
+					antialias: true
+				});
+
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.toneMapping = THREE.ACESFilmicToneMapping;
+				renderer.toneMappingExposure = 0.6;
+
+				document.body.appendChild(renderer.domElement);
+
+				createNightSky();
+				createStars();
+				createMoon();
+				createOcean();
+
+				window.addEventListener('resize', onWindowResize);
+			}
+
+			function createNightSky() {
+				const skyGeometry = new THREE.SphereGeometry(9000, 32, 32);
+
+				const skyMaterial = new THREE.ShaderMaterial({
+					side: THREE.BackSide,
+					uniforms: {
+						topColor: { value: new THREE.Color(0x020617) },
+						bottomColor: { value: new THREE.Color(0x0f172a) },
+						offset: { value: 400 },
+						exponent: { value: 0.7 }
+					},
+					vertexShader: `
+      varying vec3 vWorldPosition;
+
+      void main() {
+        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+        vWorldPosition = worldPosition.xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+					fragmentShader: `
+      uniform vec3 topColor;
+      uniform vec3 bottomColor;
+      uniform float offset;
+      uniform float exponent;
+
+      varying vec3 vWorldPosition;
+
+      void main() {
+        float h = normalize(vWorldPosition + offset).y;
+        gl_FragColor = vec4(
+          mix(bottomColor, topColor, max(pow(max(h, 0.0), exponent), 0.0)),
+          1.0
+        );
+      }
+    `
+				});
+
+				const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+				scene.add(sky);
+			}
+
+			function createStars() {
+				const radius = 6500;
+
+				function makeStarLayer(count, size, minY, maxBrightness) {
+					const positions = [];
+					const colors = [];
+
+					for (let i = 0; i < count; i++) {
+						const theta = THREE.MathUtils.randFloat(0, Math.PI * 2);
+						const normalizedY = THREE.MathUtils.randFloat(minY, 1);
+						const horizontalRadius = Math.sqrt(1 - normalizedY * normalizedY);
+
+						const x = Math.cos(theta) * horizontalRadius * radius;
+						const y = normalizedY * radius;
+						const z = Math.sin(theta) * horizontalRadius * radius;
+
+						positions.push(x, y, z);
+
+						const horizonFade = THREE.MathUtils.smoothstep(normalizedY, 0.03, 0.22);
+						const brightness = THREE.MathUtils.randFloat(0.25, maxBrightness) * horizonFade;
+						const warmth = THREE.MathUtils.randFloat(-0.08, 0.08);
+						const r = THREE.MathUtils.clamp(brightness + warmth, 0, 1);
+						const g = THREE.MathUtils.clamp(brightness, 0, 1);
+						const b = THREE.MathUtils.clamp(brightness - warmth * 0.5, 0, 1);
+
+						colors.push(r, g, b);
+					}
+
+					const geometry = new THREE.BufferGeometry();
+					geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+					geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+					return new THREE.Points(
+						geometry,
+						new THREE.PointsMaterial({
+							size,
+							sizeAttenuation: false,
+							vertexColors: true,
+							transparent: true,
+							opacity: 0.9,
+							depthWrite: false
+						})
+					);
+				}
+
+				stars = new THREE.Group();
+				stars.add(makeStarLayer(1800, 1.15, 0.025, 0.7));
+				stars.add(makeStarLayer(180, 1.8, 0.08, 1.0));
+				scene.add(stars);
+			}
+
+			function createMoon() {
+				const moonGeometry = new THREE.SphereGeometry(45, 32, 32);
+
+				const moonMaterial = new THREE.MeshBasicMaterial({
+					color: 0xdbeafe
+				});
+
+				const moon = new THREE.Mesh(moonGeometry, moonMaterial);
+				moon.position.set(-500, 700, -1200);
+				scene.add(moon);
+
+				const moonGlowGeometry = new THREE.SphereGeometry(80, 32, 32);
+
+				const moonGlowMaterial = new THREE.MeshBasicMaterial({
+					color: 0x93c5fd,
+					transparent: true,
+					opacity: 0.18
+				});
+
+				const moonGlow = new THREE.Mesh(moonGlowGeometry, moonGlowMaterial);
+				moonGlow.position.copy(moon.position);
+				scene.add(moonGlow);
+
+				const moonLight = new THREE.DirectionalLight(0x9dbfff, 1.8);
+				moonLight.position.set(-500, 700, -1200);
+				scene.add(moonLight);
+
+				const ambientLight = new THREE.AmbientLight(0x1e3a8a, 0.45);
+				scene.add(ambientLight);
+			}
+
+			function createOcean() {
+				const waterGeometry = new THREE.PlaneGeometry(10000, 10000);
+
+				const waterNormals = new THREE.TextureLoader().load(
+					'https://threejs.org/examples/textures/waternormals.jpg',
+					function (texture) {
+						texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+					}
+				);
+
+				water = new Water(waterGeometry, {
+					textureWidth: 1024,
+					textureHeight: 1024,
+					waterNormals: waterNormals,
+					sunDirection: new THREE.Vector3(-1, 1, -1).normalize(),
+					sunColor: 0x9dbfff,
+					waterColor: 0x001e3c,
+					distortionScale: 7,
+					fog: true
+				});
+
+				water.rotation.x = -Math.PI / 2;
+				water.position.y = 0;
+
+				scene.add(water);
+			}
+
+			function animate() {
+				requestAnimationFrame(animate);
+
+				const elapsedTime = clock.getElapsedTime();
+
+				water.material.uniforms['time'].value += 0.015;
+
+				stars.rotation.y += 0.00003;
+
+				camera.position.y = 80 + Math.sin(elapsedTime * 0.5) * 2;
+				camera.lookAt(0, 0, 0);
+
+				renderer.render(scene, camera);
+			}
+
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			}
+		</script>
+	</body>
+</html>

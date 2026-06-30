@@ -33,5 +33,11 @@
 		"typescript": "^6.0.3",
 		"typescript-eslint": "^8.60.1",
 		"vite": "^8.0.16"
+	},
+	"dependencies": {
+		"@types/three": "^0.185.0",
+		"lucide-svelte": "^1.0.1",
+		"puppeteer": "^25.2.1",
+		"three": "^0.185.0"
 	}
 }

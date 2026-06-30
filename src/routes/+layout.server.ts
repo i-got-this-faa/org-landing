@@ -1,4 +1,4 @@
-import type { PageServerLoad } from './$types';
+import type { LayoutServerLoad } from './$types';
 import { getOrgData, type OrgData } from '$lib/server/github';
 
 // The org this landing page represents. Single source of truth.
@@ -7,7 +7,7 @@ const ORG = 'i-got-this-faa';
 // Re-export the shape the page consumes, so markup can stay loosely typed.
 export type { OrgData };
 
-export const load: PageServerLoad = async ({ setHeaders }) => {
+export const load: LayoutServerLoad = async ({ setHeaders }) => {
 	try {
 		const data = await getOrgData(ORG);
 		// Let the CDN/edge cache the rendered HTML briefly. The data module

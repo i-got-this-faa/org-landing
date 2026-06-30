@@ -1,91 +1,39 @@
 <script lang="ts">
-	// Landing page — composed from cached server data.
-	// Flow: identity → work → people → action.
 	import type { PageData } from './$types';
-	import type { RepoMeta } from '$lib/server/github';
-	import Nav from '$lib/components/Nav.svelte';
-	import Hero from '$lib/components/Hero.svelte';
-	import SelectedWork from '$lib/components/SelectedWork.svelte';
-	import Crew from '$lib/components/Crew.svelte';
-	import CallToAction from '$lib/components/CallToAction.svelte';
-	import Footer from '$lib/components/Footer.svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	// One ticking clock for all relative-time displays.
-	let now = $state(Date.now());
-	$effect(() => {
-		const t = setInterval(() => (now = Date.now()), 60_000);
-		return () => clearInterval(t);
-	});
-
-	// Flagship = highest-starred, non-fork, non-archived project.
-	function pickFlagship(repos: RepoMeta[]): RepoMeta | null {
-		const eligible = repos.filter((r) => !r.fork && !r.archived);
-		const pool = eligible.length ? eligible : repos;
-		return pool.reduce<RepoMeta | null>(
-			(best, r) => (r.stargazers_count > (best?.stargazers_count ?? -1) ? r : best),
-			null
-		);
-	}
+	const org = $derived(data.ok ? data.data.org : null);
+	const description = $derived(
+		org?.description ?? 'We are the architects of the unseen. We believe in the power of bespoke experiences that challenge mediocrity.'
+	);
 </script>
 
 <svelte:head>
-	<title>i-got-this-faa · systems workshop</title>
-	<meta
-		name="description"
-		content="i-got-this-faa — a systems workshop building blob storage, vector search, terminals and agents."
-	/>
-	<meta name="color-scheme" content="dark" />
+	<title>{org?.name ?? org?.login ?? 'Manifesto'} · Manifesto</title>
+	<meta name="description" content={description} />
 </svelte:head>
 
-{#if data.ok}
-	{@const d = data.data}
-	{@const flagship = pickFlagship(d.repos)}
-
-	<div class="flex min-h-dvh flex-col">
-		<Nav orgLogin={d.org.login} orgUrl={d.org.html_url} />
-
-		<main class="flex-1">
-			<Hero org={d.org} {flagship} />
-			<SelectedWork repos={d.repos} {now} excludeName={flagship?.name} />
-			<Crew members={d.members} />
-			<CallToAction org={d.org} repos={d.repos} {flagship} />
-		</main>
-
-		<Footer
-			orgLogin={d.org.login}
-			orgUrl={d.org.html_url}
-			fetchedAt={d.fetched_at}
-			cacheStatus={d.cache_status}
-		/>
-	</div>
-{:else}
-	<!-- controlled error state: plain language, a retry action -->
-	<div class="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
-		<div class="micro mb-4 flex items-center gap-2">
-			<span
-				class="led"
-				style="background: var(--color-danger); box-shadow: 0 0 6px rgba(248,81,73,0.4)"
-			></span>
-			upstream unreachable
-		</div>
-		<h1 class="text-display text-3xl font-bold text-[var(--color-ink)]">ledger offline</h1>
-		<p class="mt-3 max-w-md font-mono text-xs leading-relaxed text-[var(--color-dim)]">
-			Could not reach the GitHub API to render this page.
-			{#if data.error}
-				<span
-					class="mt-2 block border border-[var(--color-edge)] bg-[var(--color-panel)] px-3 py-2 text-left text-[var(--color-dimmer)]"
-				>
-					{data.error}
-				</span>
-			{/if}
+<section class="text-cinema relative flex flex-1 items-center justify-start overflow-hidden px-12 md:px-24">
+	<div class="relative z-10 flex max-w-4xl flex-col items-start text-left">
+		
+		<!-- A strong, asymmetrical typographic manifesto instead of a generic centered header -->
+		<p class="mb-4 font-mono text-[0.65rem] uppercase tracking-[0.3em] opacity-40">
+			The Manifesto
 		</p>
-		<button
-			class="btn-primary mt-6 px-4 py-2 text-xs uppercase tracking-wider"
-			onclick={() => location.reload()}
-		>
-			retry sync
-		</button>
+		
+		<h1 class="text-5xl font-black uppercase leading-[1.0] tracking-tighter md:text-7xl lg:text-8xl">
+			Beyond <br />
+			<span class="opacity-70">The Norm.</span>
+		</h1>
+
+		<div class="mt-8 flex flex-col md:flex-row gap-8 md:gap-16 items-start">
+			<div class="h-px w-16 bg-current opacity-30 mt-3 hidden md:block shrink-0"></div>
+			<p class="max-w-2xl text-lg font-light leading-relaxed opacity-80 md:text-xl">
+				{description} 
+				We don't just build interfaces; we forge cinematic journeys. The digital landscape is cluttered with generic noise. We stand firmly against this.
+			</p>
+		</div>
+
 	</div>
-{/if}
+</section>
