@@ -36,6 +36,12 @@ export default defineConfig(
 	{
 		// Override or add rule settings here, such as:
 		// 'svelte/button-has-type': 'error'
-		rules: {}
+		rules: {
+			// This is a single-page landing. Every link is either external
+			// (github.com / project homepages) or an in-page hash anchor (#work,
+			// #crew). There is no internal SvelteKit routing to resolve(), so
+			// the typed-navigation rule is a false positive here.
+			'svelte/no-navigation-without-resolve': ['error', { ignoreLinks: true }]
+		}
 	}
 );
