@@ -1,39 +1,24 @@
 @import 'tailwindcss';
 
-/*
- * Workshop ledger / primitives catalog.
- *
- * A dark, layered, monospace-dense surface language for a systems workshop.
- * Neutrals carry the interface; a single signal accent (mint "power LED")
- * is reserved for status, the primary CTA, and the liveness proof.
- * Never spread the accent everywhere.
- */
-
 @theme {
-	/* --- Surface world (receding dark layers) ----------------------------- */
 	--color-void: #07090c; /* page background */
 	--color-panel: #0d1117; /* raised surface (github-dark-adjacent) */
 	--color-panel-2: #11161d; /* secondary raised surface */
 	--color-edge: #1c232d; /* hairline borders */
 	--color-edge-bright: #2a3441; /* lit border on focus/hover */
 
-	/* --- Ink scale -------------------------------------------------------- */
 	--color-ink: #e6edf3; /* primary text */
 	--color-ink-2: #adbac7; /* secondary text */
 	--color-dim: #6e7681; /* muted labels / metadata */
 	--color-dimmer: #4a5159; /* very quiet text */
 
-	/* --- Signal accent (the ONE accent — power LED green) ----------------- */
-	/* reserved for: status, primary CTA, the liveness proof, active state */
 	--color-signal: #34d17c;
 	--color-signal-dim: #1f6f43;
 	--color-signal-glow: rgba(52, 209, 124, 0.35);
 
-	/* --- Secondary signals (status only, not decorative) ------------------ */
 	--color-warn: #e3b341;
 	--color-danger: #f85149;
 
-	/* --- Type ------------------------------------------------------------ */
 	--font-display: 'Archivo', 'Inter', system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', monospace;
 	--font-sans: 'Archivo', system-ui, sans-serif;

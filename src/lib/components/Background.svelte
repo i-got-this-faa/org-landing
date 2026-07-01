@@ -1,26 +1,30 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import type { Attachment } from 'svelte/attachments';
+
+	type BasicSphere = import('three').Mesh<
+		import('three').SphereGeometry,
+		import('three').MeshBasicMaterial
+	>;
+	type WaterClass = typeof import('three/addons/objects/Water.js').Water;
 
 	let { isDarkMode = true }: { isDarkMode: boolean } = $props();
-
-	let canvasContainer: HTMLDivElement;
 
 	// All Three.js references — only assigned inside init() (client only)
 	let THREE: typeof import('three');
 	let scene: import('three').Scene;
 	let camera: import('three').PerspectiveCamera;
 	let renderer: import('three').WebGLRenderer;
-	let water: any; // Water type from addons
+	let water: import('three/addons/objects/Water.js').Water;
 	let clock: import('three').Clock;
 
 	let starsGroup: import('three').Group;
-	let moonMesh: import('three').Mesh;
-	let moonGlowMesh: any;
+	let moonMesh: BasicSphere;
+	let moonGlowMesh: import('three').Sprite;
 	let moonLight: import('three').DirectionalLight;
 	let nightAmbient: import('three').AmbientLight;
 
-	let sunMesh: import('three').Mesh;
-	let sunGlowMesh: any;
+	let sunMesh: BasicSphere;
+	let sunGlowMesh: import('three').Sprite;
 	let sunLight: import('three').DirectionalLight;
 	let dayAmbient: import('three').AmbientLight;
 
@@ -37,6 +41,8 @@
 	let nightSkyBottom: import('three').Color;
 	let daySkyTop: import('three').Color;
 	let daySkyBottom: import('three').Color;
+	let nightFogColor: import('three').Color;
+	let dayFogColor: import('three').Color;
 	let nightWaterColor: import('three').Color;
 	let dayWaterColor: import('three').Color;
 	let nightSunColor: import('three').Color;
@@ -47,30 +53,42 @@
 	// Temp objects for lerping — created inside init()
 	let _tmpTop: import('three').Color;
 	let _tmpBottom: import('three').Color;
+	let _tmpFog: import('three').Color;
 	let _tmpWater: import('three').Color;
 	let _tmpSun: import('three').Color;
 	let _tmpDir: import('three').Vector3;
 
 	let initialized = $state(false);
+	let active = false;
+	let animationFrame = 0;
+	const cameraBaseY = 46;
+	const cameraBaseZ = 255;
+	const cameraLookY = 115;
+	const cameraLookZ = -950;
 
-	async function init() {
+	async function init(canvas: HTMLCanvasElement) {
 		// Dynamic import — only runs on the client
 		THREE = await import('three');
 		const { Water } = await import('three/addons/objects/Water.js');
 
+		if (!active) return;
+
 		// Create color/vector targets now that THREE is loaded
-		nightSkyTop = new THREE.Color(0x020617);
-		nightSkyBottom = new THREE.Color(0x0f172a);
-		daySkyTop = new THREE.Color(0x1e6aca);
-		daySkyBottom = new THREE.Color(0x7ab8f5);
-		nightWaterColor = new THREE.Color(0x001e3c);
-		dayWaterColor = new THREE.Color(0x0369a1);
-		nightSunColor = new THREE.Color(0x9dbfff);
-		daySunColor = new THREE.Color(0xfdf4e3);
-		nightSunDir = new THREE.Vector3(-200, 150, -1200).normalize();
-		daySunDir = new THREE.Vector3(200, 150, -1200).normalize();
+		nightSkyTop = new THREE.Color(0x1a2026);
+		nightSkyBottom = new THREE.Color(0x3a4247);
+		daySkyTop = new THREE.Color(0x78c5f4);
+		daySkyBottom = new THREE.Color(0xffd79b);
+		nightFogColor = new THREE.Color(0x3b4448);
+		dayFogColor = new THREE.Color(0xf0c589);
+		nightWaterColor = new THREE.Color(0x1d2d34);
+		dayWaterColor = new THREE.Color(0x1b8ca3);
+		nightSunColor = new THREE.Color(0xd6dde8);
+		daySunColor = new THREE.Color(0xffefbd);
+		nightSunDir = new THREE.Vector3(650, 560, -1100).normalize();
+		daySunDir = new THREE.Vector3(650, 560, -1100).normalize();
 		_tmpTop = new THREE.Color();
 		_tmpBottom = new THREE.Color();
+		_tmpFog = new THREE.Color();
 		_tmpWater = new THREE.Color();
 		_tmpSun = new THREE.Color();
 		_tmpDir = new THREE.Vector3();
@@ -78,18 +96,20 @@
 		clock = new THREE.Clock();
 
 		scene = new THREE.Scene();
+		scene.fog = new THREE.Fog(nightFogColor, 560, 6200);
 
 		camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 20000);
-		camera.position.set(0, 80, 220);
-		camera.lookAt(0, 0, 0);
+		camera.position.set(0, cameraBaseY, cameraBaseZ);
+		camera.lookAt(0, cameraLookY, cameraLookZ);
 
-		renderer = new THREE.WebGLRenderer({ antialias: true });
+		renderer = new THREE.WebGLRenderer({
+			canvas,
+			antialias: true
+		});
 		renderer.setSize(window.innerWidth, window.innerHeight);
-		renderer.setPixelRatio(window.devicePixelRatio);
+		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
 		renderer.toneMapping = THREE.ACESFilmicToneMapping;
-		renderer.toneMappingExposure = 0.6;
-
-		canvasContainer.appendChild(renderer.domElement);
+		renderer.toneMappingExposure = 1.08;
 
 		createSky();
 		createStars();
@@ -114,10 +134,10 @@
 		skyMaterial = new THREE.ShaderMaterial({
 			side: THREE.BackSide,
 			uniforms: {
-				topColor: { value: new THREE.Color(0x020617) },
-				bottomColor: { value: new THREE.Color(0x0f172a) },
+				topColor: { value: new THREE.Color(0x1a2026) },
+				bottomColor: { value: new THREE.Color(0x3a4247) },
 				offset: { value: 400 },
-				exponent: { value: 0.7 }
+				exponent: { value: 0.82 }
 			},
 			vertexShader: `
 				varying vec3 vWorldPosition;
@@ -147,38 +167,122 @@
 
 	function createStars() {
 		const radius = 6500;
+		const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+		const moonDirection = new THREE.Vector3(650, 560, -1100).normalize();
+		const moonTangent = new THREE.Vector3().crossVectors(moonDirection, new THREE.Vector3(0, 1, 0));
+		if (moonTangent.lengthSq() < 0.001) moonTangent.set(1, 0, 0);
+		moonTangent.normalize();
+		const moonBitangent = new THREE.Vector3().crossVectors(moonDirection, moonTangent).normalize();
+
+		function seeded(index: number, salt: number) {
+			const value = Math.sin(index * 12.9898 + salt * 78.233) * 43758.5453;
+			return value - Math.floor(value);
+		}
+
+		function addStar(
+			positions: number[],
+			colors: number[],
+			direction: import('three').Vector3,
+			brightness: number,
+			warmth: number
+		) {
+			positions.push(direction.x * radius, direction.y * radius, direction.z * radius);
+			colors.push(
+				THREE.MathUtils.clamp(brightness + warmth, 0, 1),
+				THREE.MathUtils.clamp(brightness, 0, 1),
+				THREE.MathUtils.clamp(brightness - warmth * 0.5, 0, 1)
+			);
+		}
+
+		function makeStarMaterial(size: number) {
+			return new THREE.ShaderMaterial({
+				uniforms: {
+					opacity: { value: 1 },
+					size: { value: size },
+					time: { value: 0 }
+				},
+				transparent: true,
+				depthWrite: false,
+				vertexShader: `
+					attribute vec3 color;
+					uniform float size;
+					uniform float time;
+					varying vec3 vColor;
+					varying float vTwinkle;
+
+					float random(vec3 value) {
+						return fract(sin(dot(value, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+					}
+
+					void main() {
+						float seed = random(position);
+						vColor = color;
+						vTwinkle = 0.68 + 0.32 * sin(time * (0.7 + seed * 1.7) + seed * 6.2831853);
+						gl_PointSize = size;
+						gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+					}
+				`,
+				fragmentShader: `
+					uniform float opacity;
+					varying vec3 vColor;
+					varying float vTwinkle;
+
+					void main() {
+						float distanceFromCenter = length(gl_PointCoord - vec2(0.5));
+						float alpha = smoothstep(0.5, 0.18, distanceFromCenter) * opacity * vTwinkle;
+						gl_FragColor = vec4(vColor * vTwinkle, alpha);
+					}
+				`
+			});
+		}
+
 		function makeStarLayer(count: number, size: number, minY: number, maxBrightness: number) {
 			const positions: number[] = [];
 			const colors: number[] = [];
 			for (let i = 0; i < count; i++) {
-				const theta = THREE.MathUtils.randFloat(0, Math.PI * 2);
-				const normalizedY = THREE.MathUtils.randFloat(minY, 1);
+				const theta = i * goldenAngle + seeded(i, 1) * 0.18;
+				const normalizedY = minY + ((i + seeded(i, 2)) / count) * (1 - minY);
 				const horizontalRadius = Math.sqrt(1 - normalizedY * normalizedY);
-				positions.push(
-					Math.cos(theta) * horizontalRadius * radius,
-					normalizedY * radius,
-					Math.sin(theta) * horizontalRadius * radius
+				const direction = new THREE.Vector3(
+					Math.cos(theta) * horizontalRadius,
+					normalizedY,
+					Math.sin(theta) * horizontalRadius
 				);
 				const horizonFade = THREE.MathUtils.smoothstep(normalizedY, 0.03, 0.22);
-				const brightness = THREE.MathUtils.randFloat(0.25, maxBrightness) * horizonFade;
-				const warmth = THREE.MathUtils.randFloat(-0.08, 0.08);
-				colors.push(
-					THREE.MathUtils.clamp(brightness + warmth, 0, 1),
-					THREE.MathUtils.clamp(brightness, 0, 1),
-					THREE.MathUtils.clamp(brightness - warmth * 0.5, 0, 1)
-				);
+				const brightness = THREE.MathUtils.lerp(0.66, maxBrightness, seeded(i, 3)) * horizonFade;
+				const warmth = THREE.MathUtils.lerp(-0.08, 0.08, seeded(i, 4));
+				addStar(positions, colors, direction, brightness, warmth);
 			}
 			const geometry = new THREE.BufferGeometry();
 			geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
 			geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-			return new THREE.Points(geometry, new THREE.PointsMaterial({
-				size, sizeAttenuation: false, vertexColors: true,
-				transparent: true, opacity: 0.9, depthWrite: false
-			}));
+			return new THREE.Points(geometry, makeStarMaterial(size));
+		}
+
+		function makeMoonFillLayer(count: number, size: number) {
+			const positions: number[] = [];
+			const colors: number[] = [];
+			for (let i = 0; i < count; i++) {
+				const theta = i * goldenAngle;
+				const distance = 0.018 + Math.sqrt((i + seeded(i, 5)) / count) * 0.58;
+				const direction = moonDirection
+					.clone()
+					.addScaledVector(moonTangent, Math.cos(theta) * distance)
+					.addScaledVector(moonBitangent, Math.sin(theta) * distance)
+					.normalize();
+				const brightness = THREE.MathUtils.lerp(0.74, 1.0, seeded(i, 6));
+				const warmth = THREE.MathUtils.lerp(-0.05, 0.06, seeded(i, 7));
+				addStar(positions, colors, direction, brightness, warmth);
+			}
+			const geometry = new THREE.BufferGeometry();
+			geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+			geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+			return new THREE.Points(geometry, makeStarMaterial(size));
 		}
 		starsGroup = new THREE.Group();
-		starsGroup.add(makeStarLayer(1800, 1.15, 0.025, 0.7));
-		starsGroup.add(makeStarLayer(180, 1.8, 0.08, 1.0));
+		starsGroup.add(makeStarLayer(4300, 2.05, 0.005, 1.0));
+		starsGroup.add(makeStarLayer(760, 3.0, 0.035, 1.0));
+		starsGroup.add(makeMoonFillLayer(520, 2.45));
 		scene.add(starsGroup);
 	}
 
@@ -202,10 +306,10 @@
 	}
 
 	function createMoon() {
-		const moonGeo = new THREE.SphereGeometry(45, 32, 32);
+		const moonGeo = new THREE.SphereGeometry(32, 32, 32);
 		const moonMat = new THREE.MeshBasicMaterial({ color: 0xdbeafe, transparent: true });
 		moonMesh = new THREE.Mesh(moonGeo, moonMat);
-		moonMesh.position.set(-200, 150, -1200);
+		moonMesh.position.set(650, 560, -1100);
 		scene.add(moonMesh);
 
 		const glowTexture = createGlowTexture('rgba(147, 197, 253');
@@ -218,23 +322,23 @@
 			});
 			moonGlowMesh = new THREE.Sprite(glowMat);
 			moonGlowMesh.position.copy(moonMesh.position);
-			moonGlowMesh.scale.set(300, 300, 1);
+			moonGlowMesh.scale.set(260, 260, 1);
 			scene.add(moonGlowMesh);
 		}
 
-		moonLight = new THREE.DirectionalLight(0x9dbfff, 1.8);
+		moonLight = new THREE.DirectionalLight(0x9dbfff, 1.5);
 		moonLight.position.copy(moonMesh.position);
 		scene.add(moonLight);
 
-		nightAmbient = new THREE.AmbientLight(0x1e3a8a, 0.45);
+		nightAmbient = new THREE.AmbientLight(0x789bd8, 0.62);
 		scene.add(nightAmbient);
 	}
 
 	function createSun() {
-		const sunGeo = new THREE.SphereGeometry(65, 32, 32);
-		const sunMat = new THREE.MeshBasicMaterial({ color: 0xfffbeb, transparent: true, opacity: 0 });
+		const sunGeo = new THREE.SphereGeometry(72, 32, 32);
+		const sunMat = new THREE.MeshBasicMaterial({ color: 0xfff0bd, transparent: true, opacity: 0 });
 		sunMesh = new THREE.Mesh(sunGeo, sunMat);
-		sunMesh.position.set(200, 150, -1200);
+		sunMesh.position.set(650, 560, -1100);
 		scene.add(sunMesh);
 
 		const glowTexture = createGlowTexture('rgba(254, 240, 138');
@@ -247,7 +351,7 @@
 			});
 			sunGlowMesh = new THREE.Sprite(glowMat);
 			sunGlowMesh.position.copy(sunMesh.position);
-			sunGlowMesh.scale.set(650, 650, 1); // Large soft sun glow
+			sunGlowMesh.scale.set(860, 860, 1);
 			scene.add(sunGlowMesh);
 		}
 
@@ -255,7 +359,7 @@
 		sunLight.position.copy(sunMesh.position);
 		scene.add(sunLight);
 
-		dayAmbient = new THREE.AmbientLight(0xffffff, 0);
+		dayAmbient = new THREE.AmbientLight(0xfff1c7, 0);
 		scene.add(dayAmbient);
 	}
 
@@ -292,48 +396,51 @@
 			blending: THREE.NormalBlending
 		});
 
-		for (let i = 0; i < 22; i++) {
+		for (let i = 0; i < 34; i++) {
 			const cluster = new THREE.Group();
-			const particles = 4 + Math.floor(Math.random() * 4);
+			const particles = 5 + Math.floor(Math.random() * 5);
 			for (let j = 0; j < particles; j++) {
 				const sprite = new THREE.Sprite(cloudMat.clone());
-				const scaleX = Math.random() * 120 + 80;
-				const scaleY = scaleX * (0.25 + Math.random() * 0.15); // flat cinematic clouds
+				const scaleX = Math.random() * 190 + 110;
+				const scaleY = scaleX * (0.22 + Math.random() * 0.18);
 				sprite.scale.set(scaleX, scaleY, 1);
 				sprite.position.set(
-					(Math.random() - 0.5) * 120,
-					(Math.random() - 0.5) * 20,
-					(Math.random() - 0.5) * 100
+					(Math.random() - 0.5) * 210,
+					(Math.random() - 0.5) * 34,
+					(Math.random() - 0.5) * 150
 				);
 				sprite.material.rotation = (Math.random() - 0.5) * 0.15;
+				sprite.material.color.set(Math.random() > 0.45 ? 0xfff7e2 : 0xffffff);
+				sprite.userData.maxOpacity = THREE.MathUtils.randFloat(0.32, 0.68);
 				cluster.add(sprite);
 			}
 			cluster.position.set(
-				(Math.random() - 0.5) * 5000,
-				Math.random() * 250 + 150, // lower cloud deck for horizon depth
-				-Math.random() * 2500 - 500
+				(Math.random() - 0.5) * 5600,
+				Math.random() * 360 + 190,
+				-Math.random() * 3200 - 420
 			);
+			cluster.userData.drift = THREE.MathUtils.randFloat(0.16, 0.42);
 			cloudsGroup.add(cluster);
 		}
 		scene.add(cloudsGroup);
 	}
 
-	function createOcean(Water: any) {
+	function createOcean(Water: WaterClass) {
 		const waterGeometry = new THREE.PlaneGeometry(10000, 10000);
 		const waterNormals = new THREE.TextureLoader().load(
 			'https://threejs.org/examples/textures/waternormals.jpg',
-			function (texture: any) {
+			function (texture: import('three').Texture) {
 				texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
 			}
 		);
 		water = new Water(waterGeometry, {
 			textureWidth: 1024,
 			textureHeight: 1024,
-			waterNormals: waterNormals,
-			sunDirection: new THREE.Vector3(-1, 1, -1).normalize(),
-			sunColor: 0x9dbfff,
-			waterColor: 0x001e3c,
-			distortionScale: 7,
+			waterNormals,
+			sunDirection: nightSunDir.clone(),
+			sunColor: 0xd6dde8,
+			waterColor: 0x1d2d34,
+			distortionScale: 3.5,
 			fog: true
 		});
 		water.rotation.x = -Math.PI / 2;
@@ -352,6 +459,13 @@
 		skyMaterial.uniforms.topColor.value.copy(_tmpTop);
 		skyMaterial.uniforms.bottomColor.value.copy(_tmpBottom);
 
+		if (scene.fog instanceof THREE.Fog) {
+			_tmpFog.copy(nightFogColor).lerp(dayFogColor, t);
+			scene.fog.color.copy(_tmpFog);
+			scene.fog.near = 560 - 130 * t;
+			scene.fog.far = 6200 - 900 * t;
+		}
+
 		// Water
 		_tmpWater.copy(nightWaterColor).lerp(dayWaterColor, t);
 		_tmpSun.copy(nightSunColor).lerp(daySunColor, t);
@@ -360,40 +474,40 @@
 		_tmpDir.copy(nightSunDir).lerp(daySunDir, t).normalize();
 		water.material.uniforms.sunDirection.value.copy(_tmpDir);
 
-		// Tone mapping exposure: night=0.6, day=1.2
-		renderer.toneMappingExposure = 0.6 + 0.6 * t;
+		renderer.toneMappingExposure = 1.08 + 0.14 * t;
 
 		// Stars: fade opacity
-		starsGroup.children.forEach(child => {
-			if ((child as any).material) {
-				(child as any).material.opacity = 0.9 * nightT;
+		starsGroup.children.forEach((child) => {
+			if (child instanceof THREE.Points && child.material instanceof THREE.ShaderMaterial) {
+				child.material.uniforms.opacity.value = nightT;
 			}
 		});
 
 		// Moon: fade
-		(moonMesh.material as any).opacity = nightT;
-		(moonGlowMesh.material as any).opacity = 0.18 * nightT;
-		moonLight.intensity = 1.8 * nightT;
-		nightAmbient.intensity = 0.45 * nightT;
+		moonMesh.material.opacity = 0.68 * nightT;
+		moonGlowMesh.material.opacity = 0.12 * nightT;
+		moonLight.intensity = 1.7 * nightT;
+		nightAmbient.intensity = 0.62 * nightT;
 
 		// Sun: fade in
-		(sunMesh.material as any).opacity = t;
-		(sunGlowMesh.material as any).opacity = 0.25 * t;
-		sunLight.intensity = 2.5 * t;
-		dayAmbient.intensity = 0.8 * t;
+		sunMesh.material.opacity = t;
+		sunGlowMesh.material.opacity = 0.38 * t;
+		sunLight.intensity = 3.2 * t;
+		dayAmbient.intensity = 1.2 * t;
 
 		// Clouds: fade opacity on each mesh material
-		cloudsGroup.children.forEach(cluster => {
-			cluster.children.forEach(child => {
-				if ((child as any).material) {
-					(child as any).material.opacity = 0.65 * t;
+		cloudsGroup.children.forEach((cluster) => {
+			cluster.children.forEach((child) => {
+				if (child instanceof THREE.Sprite) {
+					child.material.opacity = (child.userData.maxOpacity ?? 0.55) * t;
 				}
 			});
 		});
 	}
 
 	function animate() {
-		requestAnimationFrame(animate);
+		if (!active) return;
+		animationFrame = requestAnimationFrame(animate);
 
 		const elapsed = clock.getElapsedTime();
 
@@ -403,22 +517,29 @@
 			applyTransition(transitionProgress);
 		}
 
-		if (water) water.material.uniforms['time'].value += 0.015;
-		if (starsGroup) starsGroup.rotation.y += 0.00003;
+		if (water) water.material.uniforms['time'].value += 0.006;
+		if (starsGroup) {
+			starsGroup.children.forEach((child) => {
+				if (child instanceof THREE.Points && child.material instanceof THREE.ShaderMaterial) {
+					child.material.uniforms.time.value = elapsed;
+				}
+			});
+		}
 
 		// Drift clouds
 		if (cloudsGroup) {
-			cloudsGroup.children.forEach(cluster => {
-				cluster.position.x += 0.35;
-				if (cluster.position.x > 2500) cluster.position.x = -2500;
+			cloudsGroup.children.forEach((cluster) => {
+				cluster.position.x += cluster.userData.drift ?? 0.24;
+				if (cluster.position.x > 2800) cluster.position.x = -2800;
 			});
 		}
 
 		if (camera) {
-			camera.position.y = 80 + Math.sin(elapsed * 0.5) * 2;
-			camera.lookAt(0, 0, 0);
+			camera.position.y = cameraBaseY + Math.sin(elapsed * 0.5) * 1.4;
+			camera.position.z = cameraBaseZ;
+			camera.lookAt(0, cameraLookY, cameraLookZ);
 		}
-		if (renderer && scene && camera) renderer.render(scene, camera);
+		if (renderer) renderer.render(scene, camera);
 	}
 
 	function onWindowResize() {
@@ -435,13 +556,18 @@
 		}
 	});
 
-	onMount(() => {
-		init();
+	const backgroundCanvas: Attachment<HTMLCanvasElement> = (canvas) => {
+		active = true;
+		init(canvas);
+
 		return () => {
+			active = false;
+			cancelAnimationFrame(animationFrame);
 			window.removeEventListener('resize', onWindowResize);
 			if (renderer) renderer.dispose();
 		};
-	});
+	};
 </script>
 
-<div bind:this={canvasContainer} class="fixed inset-0 z-0 h-[100dvh] w-full bg-transparent"></div>
+<canvas {@attach backgroundCanvas} class="fixed inset-0 z-0 h-[100dvh] w-full bg-transparent"
+></canvas>

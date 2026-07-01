@@ -4,8 +4,8 @@
 	let { data }: { data: PageData } = $props();
 
 	const members = $derived(data.ok ? data.data.members : []);
+	const orgName = $derived(data.ok ? (data.data.org.name ?? data.data.org.login) : 'Join');
 	const orgLogin = $derived(data.ok ? data.data.org.login : 'i-got-this-faa');
-	const orgUrl = $derived(data.ok ? data.data.org.html_url : 'https://github.com/i-got-this-faa');
 
 	function displayName(login: string): string {
 		return login.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -13,65 +13,33 @@
 </script>
 
 <svelte:head>
-	<title>{data.ok ? data.data.org.name ?? data.data.org.login : 'Join'} · Join</title>
+	<title>{orgName} · Join</title>
 </svelte:head>
 
 <section class="text-cinema flex flex-1 items-center justify-center overflow-hidden px-8 md:px-14">
-	<div class="grid w-full max-w-5xl gap-16 lg:grid-cols-2">
-		<!-- Left: Contact form -->
+	<div class="text-glass grid w-full max-w-5xl gap-16 px-6 py-7 md:px-8 md:py-8 lg:grid-cols-2">
 		<div class="flex flex-col justify-center">
-			<h1 class="text-4xl font-black uppercase tracking-tighter md:text-6xl">Join Us</h1>
-			<p class="mt-2 max-w-sm text-sm font-light opacity-60">
+			<h1 class="text-4xl font-black md:text-6xl">Join Us ?</h1>
+			<p class="mt-3 max-w-sm text-sm font-light leading-relaxed opacity-60">
 				We're always looking for people who build with intent. Drop a line.
 			</p>
-
-			<form class="mt-8 space-y-5" onsubmit={(e) => e.preventDefault()}>
-				<div>
-					<label for="join-name" class="mb-1 block font-mono text-[0.55rem] uppercase tracking-[0.2em] opacity-40">Name</label>
-					<input
-						type="text"
-						id="join-name"
-						placeholder="Your name"
-						class="theme-transition w-full border-b border-current/20 bg-transparent py-2 text-sm font-light outline-none placeholder:opacity-25 focus:border-current/50"
-					/>
-				</div>
-				<div>
-					<label for="join-email" class="mb-1 block font-mono text-[0.55rem] uppercase tracking-[0.2em] opacity-40">Email</label>
-					<input
-						type="email"
-						id="join-email"
-						placeholder="your@email.com"
-						class="theme-transition w-full border-b border-current/20 bg-transparent py-2 text-sm font-light outline-none placeholder:opacity-25 focus:border-current/50"
-					/>
-				</div>
-				<div>
-					<label for="join-msg" class="mb-1 block font-mono text-[0.55rem] uppercase tracking-[0.2em] opacity-40">Message</label>
-					<textarea
-						id="join-msg"
-						rows="3"
-						placeholder="What drives you?"
-						class="theme-transition w-full resize-none border-b border-current/20 bg-transparent py-2 text-sm font-light outline-none placeholder:opacity-25 focus:border-current/50"
-					></textarea>
-				</div>
-				<button
-					type="submit"
-					class="theme-transition mt-2 border border-current/30 px-8 py-2.5 font-mono text-[0.6rem] uppercase tracking-[0.2em] hover:bg-current/10"
-				>
-					Transmit ↗
-				</button>
-			</form>
+			<a
+				href="mailto:hello@i-got-this-faa.dev?subject=Joining%20i-got-this-faa"
+				class="theme-transition mt-8 inline-flex w-fit border border-current/30 px-8 py-2.5 font-mono text-[0.6rem] uppercase tracking-[0.2em] hover:bg-current/10"
+			>
+				Join
+			</a>
 		</div>
 
-		<!-- Right: Team + Contact -->
 		<div class="flex flex-col justify-center">
 			<h2 class="font-mono text-[0.6rem] uppercase tracking-[0.2em] opacity-40">The Crew</h2>
 			<ul class="mt-4 flex flex-wrap gap-4">
 				{#each members as member (member.login)}
 					<li>
 						<a
-							href={member.html_url}
+							href="https://github.com/{member.login}"
 							target="_blank"
-							rel="noreferrer"
+							rel="noreferrer noopener"
 							class="theme-transition group flex flex-col items-center gap-1.5"
 						>
 							<img
@@ -81,9 +49,6 @@
 								width="48"
 								height="48"
 							/>
-							<span class="font-mono text-[0.5rem] uppercase tracking-[0.1em] opacity-50 group-hover:opacity-80">
-								{displayName(member.login)}
-							</span>
 						</a>
 					</li>
 				{/each}
@@ -93,12 +58,12 @@
 				<h3 class="font-mono text-[0.6rem] uppercase tracking-[0.2em] opacity-40">Direct</h3>
 				<div class="mt-3 space-y-1">
 					<a
-						href={orgUrl}
+						href="https://github.com/{orgLogin}"
 						target="_blank"
-						rel="noreferrer"
+						rel="noreferrer noopener"
 						class="theme-transition block text-sm font-light opacity-60 hover:opacity-100"
 					>
-						github.com/{orgLogin} ↗
+						github.com/{orgLogin}
 					</a>
 				</div>
 			</div>
