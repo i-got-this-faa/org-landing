@@ -1,4 +1,5 @@
 ## general guidelines:
+
 - use bun for the package manager
 - when installing new packages, use bun add instead of manually editing the package.json file
 - dont build the project locally or create dev environment.

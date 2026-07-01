@@ -37,7 +37,7 @@
 		<div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 			{#each repos as repo, index (repo.id)}
 				<svelte:element
-					this={'a'}
+					this={"a"}
 					href={repo.href as `https://${string}`}
 					target="_blank"
 					rel="noreferrer noopener"

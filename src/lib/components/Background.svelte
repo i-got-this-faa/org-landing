@@ -20,11 +20,13 @@
 	let starsGroup: import('three').Group;
 	let moonMesh: BasicSphere;
 	let moonGlowMesh: import('three').Sprite;
+	let moonReflectionMesh: import('three').Sprite;
 	let moonLight: import('three').DirectionalLight;
 	let nightAmbient: import('three').AmbientLight;
 
 	let sunMesh: BasicSphere;
 	let sunGlowMesh: import('three').Sprite;
+	let sunReflectionMesh: import('three').Sprite;
 	let sunLight: import('three').DirectionalLight;
 	let dayAmbient: import('three').AmbientLight;
 
@@ -65,6 +67,7 @@
 	const cameraBaseZ = 255;
 	const cameraLookY = 115;
 	const cameraLookZ = -950;
+	const waterTimeStep = 0.011;
 
 	async function init(canvas: HTMLCanvasElement) {
 		// Dynamic import — only runs on the client
@@ -117,6 +120,7 @@
 		createSun();
 		createClouds();
 		createOcean(Water);
+		createWaterReflections();
 
 		// Set initial state instantly (no transition on first load)
 		transitionProgress = isDarkMode ? 0 : 1;
@@ -305,6 +309,32 @@
 		return new THREE.CanvasTexture(canvas);
 	}
 
+	function createReflectionTexture(rgbaPrefix: string) {
+		const canvas = document.createElement('canvas');
+		canvas.width = 512;
+		canvas.height = 128;
+		const ctx = canvas.getContext('2d');
+		if (!ctx) return null;
+
+		const horizontalGlow = ctx.createRadialGradient(256, 64, 0, 256, 64, 256);
+		horizontalGlow.addColorStop(0, `${rgbaPrefix}, 0.86)`);
+		horizontalGlow.addColorStop(0.28, `${rgbaPrefix}, 0.32)`);
+		horizontalGlow.addColorStop(0.72, `${rgbaPrefix}, 0.08)`);
+		horizontalGlow.addColorStop(1, `${rgbaPrefix}, 0.0)`);
+		ctx.fillStyle = horizontalGlow;
+		ctx.fillRect(0, 0, 512, 128);
+
+		const verticalMask = ctx.createLinearGradient(0, 0, 0, 128);
+		verticalMask.addColorStop(0, 'rgba(0, 0, 0, 0)');
+		verticalMask.addColorStop(0.42, 'rgba(0, 0, 0, 1)');
+		verticalMask.addColorStop(1, 'rgba(0, 0, 0, 0)');
+		ctx.globalCompositeOperation = 'destination-in';
+		ctx.fillStyle = verticalMask;
+		ctx.fillRect(0, 0, 512, 128);
+
+		return new THREE.CanvasTexture(canvas);
+	}
+
 	function createMoon() {
 		const moonGeo = new THREE.SphereGeometry(32, 32, 32);
 		const moonMat = new THREE.MeshBasicMaterial({ color: 0xdbeafe, transparent: true });
@@ -425,22 +455,56 @@
 		scene.add(cloudsGroup);
 	}
 
+	function createWaterReflections() {
+		const moonReflectionTexture = createReflectionTexture('rgba(191, 219, 254');
+		if (moonReflectionTexture) {
+			const material = new THREE.SpriteMaterial({
+				map: moonReflectionTexture,
+				transparent: true,
+				opacity: 0,
+				depthWrite: false,
+				blending: THREE.AdditiveBlending
+			});
+			moonReflectionMesh = new THREE.Sprite(material);
+			moonReflectionMesh.position.set(0, 2.8, -520);
+			moonReflectionMesh.scale.set(720, 92, 1);
+			scene.add(moonReflectionMesh);
+		}
+
+		const sunReflectionTexture = createReflectionTexture('rgba(255, 226, 146');
+		if (sunReflectionTexture) {
+			const material = new THREE.SpriteMaterial({
+				map: sunReflectionTexture,
+				transparent: true,
+				opacity: 0,
+				depthWrite: false,
+				blending: THREE.AdditiveBlending
+			});
+			sunReflectionMesh = new THREE.Sprite(material);
+			sunReflectionMesh.position.set(0, 3, -500);
+			sunReflectionMesh.scale.set(940, 124, 1);
+			scene.add(sunReflectionMesh);
+		}
+	}
+
 	function createOcean(Water: WaterClass) {
 		const waterGeometry = new THREE.PlaneGeometry(10000, 10000);
 		const waterNormals = new THREE.TextureLoader().load(
 			'https://threejs.org/examples/textures/waternormals.jpg',
 			function (texture: import('three').Texture) {
 				texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+				texture.repeat.set(3.2, 3.2);
+				texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 			}
 		);
 		water = new Water(waterGeometry, {
-			textureWidth: 1024,
-			textureHeight: 1024,
+			textureWidth: 2048,
+			textureHeight: 2048,
 			waterNormals,
 			sunDirection: nightSunDir.clone(),
 			sunColor: 0xd6dde8,
-			waterColor: 0x1d2d34,
-			distortionScale: 3.5,
+			waterColor: 0x142832,
+			distortionScale: 6.4,
 			fog: true
 		});
 		water.rotation.x = -Math.PI / 2;
@@ -486,12 +550,14 @@
 		// Moon: fade
 		moonMesh.material.opacity = 0.68 * nightT;
 		moonGlowMesh.material.opacity = 0.12 * nightT;
+		moonReflectionMesh.material.opacity = 0.42 * nightT;
 		moonLight.intensity = 1.7 * nightT;
 		nightAmbient.intensity = 0.62 * nightT;
 
 		// Sun: fade in
 		sunMesh.material.opacity = t;
 		sunGlowMesh.material.opacity = 0.38 * t;
+		sunReflectionMesh.material.opacity = 0.48 * t;
 		sunLight.intensity = 3.2 * t;
 		dayAmbient.intensity = 1.2 * t;
 
@@ -517,7 +583,17 @@
 			applyTransition(transitionProgress);
 		}
 
-		if (water) water.material.uniforms['time'].value += 0.006;
+		if (water) water.material.uniforms['time'].value += waterTimeStep;
+		if (moonReflectionMesh) {
+			const shimmer = 1 + Math.sin(elapsed * 1.8) * 0.035;
+			moonReflectionMesh.scale.set(720 * shimmer, 92 + Math.sin(elapsed * 2.4) * 8, 1);
+			moonReflectionMesh.position.x = Math.sin(elapsed * 0.42) * 18;
+		}
+		if (sunReflectionMesh) {
+			const shimmer = 1 + Math.sin(elapsed * 1.45 + 0.7) * 0.04;
+			sunReflectionMesh.scale.set(940 * shimmer, 124 + Math.sin(elapsed * 2.1) * 10, 1);
+			sunReflectionMesh.position.x = Math.sin(elapsed * 0.38 + 0.4) * 22;
+		}
 		if (starsGroup) {
 			starsGroup.children.forEach((child) => {
 				if (child instanceof THREE.Points && child.material instanceof THREE.ShaderMaterial) {
