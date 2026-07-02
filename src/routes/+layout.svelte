@@ -1,34 +1,30 @@
 <script lang="ts">
 	import '../app.css';
 	import { resolve } from '$app/paths';
-	import { GitBranch, Moon, Sun } from 'lucide-svelte';
-	import { theme } from '$lib/state.svelte';
+	import { GitBranch } from 'lucide-svelte';
 	import Background from '$lib/components/Background.svelte';
-	import favicon from '$lib/assets/favicon.svg';
+	import favicon from '$lib/assets/gemini-logo.svg';
 	import logo from '$lib/assets/gemini-logo.svg';
 
 	let { data, children } = $props();
 
 	const orgLogin = $derived(data.ok ? data.data.org.login : 'i-got-this-faa');
-	const themeName = $derived(theme.isDark ? 'night' : 'day');
+	const themeName = 'night';
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
 	<meta name="color-scheme" content="dark light" />
-	<meta name="theme-color" content={theme.isDark ? '#07131d' : '#9ed2ea'} />
+	<meta name="theme-color" content="#07131d" />
 </svelte:head>
 
-<Background isDarkMode={theme.isDark} />
+<Background />
 <div class={['frosted-field theme-transition', themeName]}></div>
 <div class={['scene-scrim theme-transition', themeName]}></div>
 <div class={['screen-noise theme-transition', themeName]}></div>
 
 <div
-	class={[
-		'site-shell theme-transition relative z-10 flex h-dvh flex-col overflow-hidden',
-		theme.isDark ? 'theme-night' : 'theme-day'
-	]}
+	class="site-shell theme-transition relative z-10 flex h-dvh flex-col overflow-hidden theme-night"
 >
 	<header class="corner-header theme-transition">
 		<a href={resolve('/')} class="corner-mark text-cinema" aria-label="Home">
@@ -54,20 +50,6 @@
 			>
 				Join
 			</a>
-
-			<button
-				type="button"
-				class="glass-pill theme-toggle text-cinema theme-transition"
-				onclick={() => theme.toggle()}
-				aria-label={theme.isDark ? 'Switch to day scene' : 'Switch to night scene'}
-				title={theme.isDark ? 'Switch to day scene' : 'Switch to night scene'}
-			>
-				{#if theme.isDark}
-					<Sun size={15} strokeWidth={1.9} />
-				{:else}
-					<Moon size={15} strokeWidth={1.9} />
-				{/if}
-			</button>
 		</nav>
 	</header>
 
