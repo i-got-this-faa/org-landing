@@ -25,19 +25,21 @@
 
 <section class="reference-page text-cinema">
 	<audio bind:this={faaPlayer} src={faaAudio} preload="auto"></audio>
-	<p class="reference-statement text-glass cinema-serif">
-		We build open software with a cinematic eye,
-		<br />
-		Crafted under the supervision of the cat, shaped by the humans who use it.
-		<br />
-		Just scream "
-		<button
-			type="button"
-			class="theme-transition cursor-pointer border-0 bg-transparent p-0 font-inherit text-inherit underline decoration-current/25 underline-offset-4 hover:decoration-current/70 focus-visible:decoration-current/70"
-			onpointerenter={playFaa}
-			onfocus={playFaa}
-		>
-			I got this, Faaaa</button
-		>", and let the cat do the rest.
+	<p class="reference-statement text-glass page-morph cinema-serif">
+		<span class="page-copy-fade">
+			We build open software with a cinematic eye,
+			<br />
+			Crafted under the supervision of the cat, shaped by the humans who use it.
+			<br />
+			Just scream "
+			<button
+				type="button"
+				class="theme-transition cursor-pointer border-0 bg-transparent p-0 font-inherit text-inherit underline decoration-current/25 underline-offset-4 hover:decoration-current/70 focus-visible:decoration-current/70"
+				onpointerenter={playFaa}
+				onfocus={playFaa}
+			>
+				I got this, Faaaa</button
+			>", and let the cat do the rest.
+		</span>
 	</p>
 </section>

@@ -29,7 +29,7 @@
 </svelte:head>
 
 <section class="text-cinema flex flex-1 flex-col justify-center overflow-hidden px-8 py-8 md:px-20">
-	<div class="text-glass mx-auto w-full max-w-5xl px-6 py-7 md:px-8 md:py-8">
+	<div class="text-glass page-morph mx-auto w-full max-w-5xl px-6 py-7 md:px-8 md:py-8">
 		<p class="font-mono text-[0.62rem] uppercase tracking-[0.22em] opacity-40">Flagship work</p>
 
 		<div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">

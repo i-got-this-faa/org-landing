@@ -20,7 +20,7 @@
 </script>
 
 <section class="text-cinema flex flex-1 overflow-y-auto px-5 py-8 sm:px-8 md:px-14">
-	<div class="text-glass mx-auto w-full max-w-3xl self-center px-6 py-7 sm:px-8">
+	<div class="text-glass page-morph mx-auto w-full max-w-3xl self-center px-6 py-7 sm:px-8">
 		<h1 class="max-w-2xl text-4xl font-black leading-[0.98] tracking-normal sm:text-5xl">
 			Wana build with us?
 		</h1>
