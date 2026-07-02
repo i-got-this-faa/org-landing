@@ -25,8 +25,8 @@
 
 <section class="reference-page text-cinema">
 	<audio bind:this={faaPlayer} src={faaAudio} preload="auto"></audio>
-	<p class="reference-statement text-glass page-morph cinema-serif">
-		<span class="page-copy-fade">
+	<p class="reference-statement text-glass cinema-serif">
+		<span class="page-fade">
 			We build open software with a cinematic eye,
 			<br />
 			Crafted under the supervision of the cat, shaped by the humans who use it.

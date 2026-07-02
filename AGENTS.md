@@ -12,6 +12,11 @@
 - dont write monolithic files, break them down into smaller, reusable pieces
 - use components for UI
 
+## Animation / backdrop-filter warning
+
+- The app relies on glass surfaces using `backdrop-filter` (`.text-glass`, `.glass-pill`, and related layers). Do not add page-level route transitions that animate `opacity`, `filter`, or overlay veils around these surfaces. Those properties can create backdrop roots and make the blur render late, darken the page, or sample the wrong background.
+- If a transition is needed, keep it local to non-glass inner content or use transform-only motion that does not wrap or cover the `backdrop-filter` element.
+
 ## Before You Start Coding
 
 ### Ask Yourself:

@@ -278,50 +278,26 @@ textarea {
 	color: rgba(18, 35, 47, 0.78);
 }
 
-.reference-statement .page-copy-fade {
+.reference-statement .page-fade {
 	color: inherit;
 }
 
-.page-morph {
-	transform-origin: center;
-	backface-visibility: hidden;
-	animation: page-morph-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+.page-fade {
+	animation: page-fade-in 180ms ease both;
 }
 
-.page-morph > *,
-.page-copy-fade {
-	animation: page-copy-fade-in 220ms ease 60ms both;
-}
-
-@keyframes page-morph-in {
-	0% {
-		transform: translate3d(0, 0.75rem, 0) scale(0.985);
-		background-color: rgba(7, 19, 29, 0.08);
-		border-color: rgba(255, 255, 247, 0.04);
-		border-radius: 1.45rem;
-	}
-
-	100% {
-		transform: translate3d(0, 0, 0) scale(1);
-	}
-}
-
-@keyframes page-copy-fade-in {
-	0% {
+@keyframes page-fade-in {
+	from {
 		opacity: 0;
-		transform: translate3d(0, 0.25rem, 0);
 	}
 
-	100% {
+	to {
 		opacity: 1;
-		transform: translate3d(0, 0, 0);
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.page-morph,
-	.page-morph > *,
-	.page-copy-fade {
+	.page-fade {
 		animation: none;
 	}
 }
