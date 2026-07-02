@@ -1,12 +1,10 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { WORK_REPO_LINKS } from '$lib/const';
-	import { langColor } from '$lib/format';
 
 	let { data }: { data: PageData } = $props();
 
 	const orgName = $derived(data.ok ? (data.data.org.name ?? data.data.org.login) : 'Work');
-	const orgLogin = $derived(data.ok ? data.data.org.login : 'i-got-this-faa');
 	const reposByUrl = $derived(
 		new Map(data.ok ? data.data.repos.map((repo) => [repo.html_url.toLowerCase(), repo]) : [])
 	);
@@ -35,7 +33,7 @@
 		<p class="font-mono text-[0.62rem] uppercase tracking-[0.22em] opacity-40">Flagship work</p>
 
 		<div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-			{#each repos as repo, index (repo.id)}
+			{#each repos as repo (repo.id)}
 				<svelte:element
 					this={"a"}
 					href={repo.href as `https://${string}`}
@@ -43,19 +41,20 @@
 					rel="noreferrer noopener"
 					class="group theme-transition block"
 				>
-					<div
-						class="flex items-center gap-3 font-mono text-[0.58rem] uppercase tracking-[0.18em] opacity-40"
-					>
-						<span>{String(index + 1).padStart(2, '0')}</span>
+					<div class="flex min-w-0 items-start justify-between gap-4">
+						<h2
+							class="min-w-0 truncate text-xl font-semibold tracking-tight underline decoration-current/25 underline-offset-4 opacity-90 group-hover:decoration-current/70 group-hover:opacity-100"
+						>
+							{repo.name}
+						</h2>
 						{#if repo.language}
-							<span class="h-1.5 w-1.5 rounded-full" style:background={langColor(repo.language)}
-							></span>
-							<span>{repo.language}</span>
+							<span
+								class="shrink-0 pt-1 font-mono text-[0.58rem] uppercase tracking-[0.18em] opacity-40"
+							>
+								{repo.language}
+							</span>
 						{/if}
 					</div>
-					<h2 class="mt-3 text-xl font-semibold tracking-tight opacity-90 group-hover:opacity-100">
-						{repo.name}
-					</h2>
 					{#if repo.description}
 						<p class="mt-2 line-clamp-3 text-sm leading-relaxed opacity-55">
 							{repo.description}
@@ -64,16 +63,5 @@
 				</svelte:element>
 			{/each}
 		</div>
-
-		{#if data.ok}
-			<a
-				href="https://github.com/orgs/{orgLogin}/repositories"
-				target="_blank"
-				rel="noreferrer noopener"
-				class="theme-transition mt-10 inline-flex font-mono text-[0.62rem] uppercase tracking-[0.2em] opacity-40 hover:opacity-75"
-			>
-				browse all repositories
-			</a>
-		{/if}
 	</div>
 </section>

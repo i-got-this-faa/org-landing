@@ -54,8 +54,19 @@ export interface RepoMeta {
 
 export interface MemberMeta {
 	login: string;
+	name: string | null;
 	avatar_url: string;
 	html_url: string;
+}
+
+interface GitHubMemberSummary {
+	login: string;
+	avatar_url: string;
+	html_url: string;
+}
+
+interface GitHubUserProfile extends GitHubMemberSummary {
+	name: string | null;
 }
 
 export interface EventMeta {
@@ -146,7 +157,22 @@ async function fetchRepos(org: string, signal?: AbortSignal): Promise<RepoMeta[]
 }
 
 async function fetchMembers(org: string, signal?: AbortSignal): Promise<MemberMeta[]> {
-	return gh<MemberMeta[]>(`/orgs/${org}/members?per_page=100`, signal);
+	const members = await gh<GitHubMemberSummary[]>(`/orgs/${org}/members?per_page=100`, signal);
+
+	return Promise.all(
+		members.map(async (member) => {
+			const profile = await gh<GitHubUserProfile>(`/users/${member.login}`, signal).catch(
+				() => null
+			);
+
+			return {
+				login: member.login,
+				name: profile?.name ?? null,
+				avatar_url: member.avatar_url,
+				html_url: member.html_url
+			};
+		})
+	);
 }
 
 async function fetchEvents(org: string, signal?: AbortSignal): Promise<EventMeta[]> {

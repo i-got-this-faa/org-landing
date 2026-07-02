@@ -9,12 +9,8 @@
 
 	let { data, children } = $props();
 
-	const orgName = $derived(
-		data.ok ? (data.data.org.name ?? data.data.org.login) : 'i-got-this-faa'
-	);
 	const orgLogin = $derived(data.ok ? data.data.org.login : 'i-got-this-faa');
 	const themeName = $derived(theme.isDark ? 'night' : 'day');
-	const year = new Date().getFullYear();
 </script>
 
 <svelte:head>

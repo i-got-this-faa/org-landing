@@ -2,8 +2,7 @@
 	// Selected work — a curated showcase of the org's projects.
 	// NOT a data table. Editorial, scannable, each project earns its place.
 	// Descending by activity (pushed_at) so the living work leads.
-	import CloneButton from './CloneButton.svelte';
-	import { langColor, compact, relativeTime, absDate, cloneUrl } from '$lib/format';
+	import { langColor, compact, relativeTime, absDate } from '$lib/format';
 	import type { RepoMeta } from '$lib/server/github';
 
 	interface Props {
@@ -87,8 +86,6 @@
 						{:else}
 							<p class="mt-3 text-sm italic text-[var(--color-dimmer)]">no description</p>
 						{/if}
-
-						<!-- facts row, pushed to bottom -->
 						<div
 							class="mt-auto flex items-center gap-4 pt-5 font-mono text-[10.5px] text-[var(--color-dim)]"
 						>
@@ -116,33 +113,8 @@
 							</time>
 						</div>
 					</a>
-
-					<!-- hover-revealed clone, secondary action -->
-					<div class="absolute right-4 top-4 opacity-0 transition-opacity group-hover:opacity-100">
-						<CloneButton url={cloneUrl(r.full_name)} />
-					</div>
 				</li>
 			{/each}
 		</ul>
-
-		<div class="mt-8 text-center">
-			<a
-				href="https://github.com/orgs/i-got-this-faa/repositories"
-				target="_blank"
-				rel="noreferrer noopener"
-				class="btn-ghost inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-wider"
-			>
-				browse all repositories
-				<svg width="11" height="11" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-					<path
-						d="M3 8h10M9 4l4 4-4 4"
-						stroke="currentColor"
-						stroke-width="1.6"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
-				</svg>
-			</a>
-		</div>
 	</div>
 </section>
