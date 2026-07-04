@@ -62,7 +62,7 @@ textarea {
 		color 0.7s ease,
 		background-color 0.7s ease,
 		border-color 0.7s ease,
-		opacity 0.7s ease;
+		box-shadow 0.7s ease;
 }
 
 .frosted-field {
@@ -71,14 +71,10 @@ textarea {
 	z-index: 1;
 	pointer-events: none;
 	background: rgba(255, 255, 255, 0.012);
-	backdrop-filter: blur(0.55px) saturate(96%) contrast(102%);
-	-webkit-backdrop-filter: blur(0.55px) saturate(96%) contrast(102%);
 }
 
 .frosted-field.day {
 	background: rgba(255, 252, 238, 0.035);
-	backdrop-filter: blur(0.8px) saturate(108%);
-	-webkit-backdrop-filter: blur(0.8px) saturate(108%);
 }
 
 .scene-scrim {
@@ -128,6 +124,7 @@ textarea {
 		inset 0 1px 0 rgba(255, 255, 255, 0.08);
 	backdrop-filter: blur(18px) saturate(118%);
 	-webkit-backdrop-filter: blur(18px) saturate(118%);
+	transform: translateZ(0);
 }
 
 .theme-day .text-glass {
@@ -150,6 +147,7 @@ textarea {
 		inset 0 1px 0 rgba(255, 255, 255, 0.08);
 	backdrop-filter: blur(15px) saturate(118%);
 	-webkit-backdrop-filter: blur(15px) saturate(118%);
+	transform: translateZ(0);
 }
 
 .theme-day .glass-pill {
