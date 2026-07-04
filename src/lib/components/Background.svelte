@@ -13,7 +13,7 @@
 	let camera: import('three').PerspectiveCamera;
 	let renderer: import('three').WebGLRenderer;
 	let water: import('three/addons/objects/Water.js').Water;
-	let clock: import('three').Clock;
+	let timer: import('three').Timer;
 
 	let starsGroup: import('three').Group;
 	let moonMesh: BasicSphere;
@@ -38,7 +38,8 @@
 
 		if (!active) return;
 
-		clock = new THREE.Clock();
+		timer = new THREE.Timer();
+		timer.connect(document);
 
 		scene = new THREE.Scene();
 		scene.fog = new THREE.Fog(0x3b4448, 560, 6200);
@@ -299,11 +300,12 @@
 		scene.add(water);
 	}
 
-	function animate() {
+	function animate(timestamp?: DOMHighResTimeStamp) {
 		if (!active) return;
 		animationFrame = requestAnimationFrame(animate);
 
-		const elapsed = clock.getElapsedTime();
+		timer.update(timestamp);
+		const elapsed = timer.getElapsed();
 
 		if (water) water.material.uniforms['time'].value += waterTimeStep;
 		if (starsGroup) {
@@ -338,6 +340,7 @@
 			active = false;
 			cancelAnimationFrame(animationFrame);
 			window.removeEventListener('resize', onWindowResize);
+			if (timer) timer.dispose();
 			if (renderer) renderer.dispose();
 		};
 	};

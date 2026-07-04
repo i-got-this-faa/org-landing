@@ -116,14 +116,16 @@ textarea {
 }
 
 .text-glass {
+	--glass-backdrop-filter: blur(18px) saturate(118%);
+
 	border: 1px solid rgba(255, 255, 247, 0.12);
 	border-radius: 1.15rem;
 	background: rgba(7, 19, 29, 0.28);
 	box-shadow:
 		0 1.25rem 4rem rgba(0, 0, 0, 0.16),
 		inset 0 1px 0 rgba(255, 255, 255, 0.08);
-	backdrop-filter: blur(18px) saturate(118%);
-	-webkit-backdrop-filter: blur(18px) saturate(118%);
+	-webkit-backdrop-filter: var(--glass-backdrop-filter);
+	backdrop-filter: var(--glass-backdrop-filter);
 	transform: translateZ(0);
 }
 
@@ -136,6 +138,8 @@ textarea {
 }
 
 .glass-pill {
+	--glass-backdrop-filter: blur(15px) saturate(118%);
+
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -145,8 +149,8 @@ textarea {
 	box-shadow:
 		0 0.75rem 2rem rgba(0, 0, 0, 0.14),
 		inset 0 1px 0 rgba(255, 255, 255, 0.08);
-	backdrop-filter: blur(15px) saturate(118%);
-	-webkit-backdrop-filter: blur(15px) saturate(118%);
+	-webkit-backdrop-filter: var(--glass-backdrop-filter);
+	backdrop-filter: var(--glass-backdrop-filter);
 	transform: translateZ(0);
 }
 
