@@ -8,7 +8,7 @@
 
 	let { members }: Props = $props();
 
-	const emailHref = 'mailto:hello@i-got-this-faa.dev?subject=Joining%20i-got-this-faa';
+	const emailHref = 'mailto:support@faaa.me?subject=Joining%20i-got-this-faa';
 
 	function fallbackName(login: string): string {
 		return login.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
